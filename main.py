@@ -1,48 +1,26 @@
-from data_preparator.data_preparator import DataPreparator
+# llm_pdf_finetuner/main.py (example)
+# llm_pdf_finetuner/main.py
+from data_preparator.pdf_loader import PDFLoader
+from data_preparator.cleaner import TextCleaner
+from data_preparator.dataset_formatter import DatasetFormatter
+from model.model_loader import ModelLoader
+from model.trainer import Trainer
 
-# from train_model import TrainModel
-from model.model_wrapper import ModelWrapper
+def main():
+    # Data preparation
+    loader = PDFLoader("sample_pdfs")
+    pdf_contents = loader.load_all_pdfs()
+    cleaner = TextCleaner(max_chunk_length=512)
+    all_chunks = [chunk for _, text in pdf_contents for chunk in cleaner.chunk_text(text)]
+    formatter = DatasetFormatter("output", use_api=True)
+    formatter.format_and_save(all_chunks)
 
-from config import PREPARED_DATA_PATH
-from config import RAW_DATA_DICT
-from config import FEATURE_IMPORTANCES_PATH
-from config import SUBMISSION_PATH
+    # Model training
+    loader = ModelLoader()
+    model, tokenizer = loader.load_model_and_tokenizer()
+    trainer = Trainer(model, tokenizer, "output/instruct_dataset.json", "fine_tuned_model")
+    trainer.configure_lora()
+    trainer.train()
 
-# Server
-import pandas as pd
-from fastapi import FastAPI
-
-app = FastAPI(
-    title="Probability default model.",
-    description="A simple pipeline to train and use probability default models.",
-    version="1.0",
-)
-
-
-# Read and prepare data
-@app.post("/prepare_data")
-def prepare_data():
-    data_preparator = DataPreparator(RAW_DATA_DICT)
-    print("Data preparator was initialized.")
-    prepared_df = data_preparator.prepare_data()
-    prepared_df.to_parquet(PREPARED_DATA_PATH, index=False)
-
-
-@app.post("/train")
-def train_model():
-    # read prepared data
-    df = pd.read_parquet(PREPARED_DATA_PATH)
-    num_folds = 5
-
-    # model_trainer = TrainModel()
-    model_wrapper = ModelWrapper(num_folds=num_folds, df=df)
-    # feature_importances_df = model_trainer.train_model()
-    feature_importances_df = model_wrapper.train_model()
-    feature_importances_df.to_csv(FEATURE_IMPORTANCES_PATH, index=False)
-
-
-@app.post("/predict")
-def predict():
-    model_wrapper = ModelWrapper()
-    submission = model_wrapper.predict()
-    submission.to_csv(SUBMISSION_PATH, index=False)
+if __name__ == "__main__":
+    main()

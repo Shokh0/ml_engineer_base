@@ -1,10 +1,10 @@
-numpy
-pandas
-scikit-learn
-tensorflow
-torch
-fastapi
-uvicorn
-matplotlib
-seaborn
-fastapi
+pdfplumber==0.10.2
+nltk==3.8.1
+requests==2.31.0
+spacy==3.7.2
+transformers==4.38.2
+torch==2.2.1
+peft==0.10.0
+datasets==2.18.0
+bitsandbytes==0.43.0  # For 4-bit quantization
+accelerate==0.28.0    # For device management
